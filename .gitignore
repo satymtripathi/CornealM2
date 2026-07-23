@@ -1,0 +1,51 @@
+# =====================================================================
+# PATIENT DATA - MUST NEVER BE COMMITTED
+# =====================================================================
+# The crosswalk maps pseudonymous IDs back to patient names and MRNs.
+# It is the only PHI-bearing artefact in the project.
+.phi/
+**/crosswalk.csv
+
+# Patient images. De-identified, but still corneal photographs of real
+# patients: publishing them needs ethics approval and a data-sharing
+# agreement, not a .gitignore decision.
+data/raw/
+data/reference/
+data/interim/
+data/processed/
+
+# Per-image predictions on patient images (filenames, hashes, results)
+outputs/external_validation/*/predictions_scored.csv
+outputs/external_validation/*/label_conflicts.csv
+outputs/batch_predictions*.csv
+outputs/review_gt*.tsv
+
+# Per-image manifests (pseudonymous, but patient-level records)
+outputs/manifests/manifest*.csv
+outputs/manifests/image_qc.csv
+outputs/manifests/limbus_geometry.csv
+outputs/manifests/embeddings/
+
+# Overlays and figures rendered from patient images
+outputs/figures/
+
+# =====================================================================
+# Build artefacts
+# =====================================================================
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+.DS_Store
+Thumbs.db
+*.log
+
+# =====================================================================
+# Analysis outputs - excluded by request (repo carries code + model only,
+# i.e. exactly what the app needs to run). These contain no PHI
+# (verified: 0 name/MRN tokens) and can be added back at any time.
+# =====================================================================
+outputs/reports/
+outputs/external_validation/
+outputs/manifests/

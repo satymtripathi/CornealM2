@@ -1,0 +1,33 @@
+{
+  "temperature_external": 0.9980173707008362,
+  "temperature_internal": 1.0803494453430176,
+  "n_calibration": 164,
+  "cohorts": [
+    "cohort_01_reviewR",
+    "cohort_02_review"
+  ],
+  "pooled_auc": 0.8391,
+  "shipped": {
+    "mode": "forced_choice",
+    "threshold": 0.25,
+    "rationale": "90% fungal recall on pooled external"
+  },
+  "abstain_band_75": [
+    0.33,
+    0.436
+  ],
+  "internal_band": [
+    0.374,
+    0.614
+  ],
+  "loco_mean_accuracy_covered": 0.7608,
+  "abstain_band_80": [
+    0.25,
+    0.57
+  ],
+  "selective_band": [
+    0.25,
+    0.57
+  ],
+  "selective_rationale": "80% precision floor. The 75% floor band [0.33,0.44] was dominated: 90.9% coverage at 75.2% accuracy, i.e. WORSE than answering everything (76.8% at 100%). A selective mode must buy accuracy with its abstentions; [0.25,0.57] gives 81.2% on 78% coverage."
+}
