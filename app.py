@@ -80,10 +80,10 @@ def main():
         st.divider()
         st.subheader("Read the probability carefully")
         st.markdown(
-            "This cohort is curated to **1:1**. In clinic fungal is far more common "
-            "(~91% in the source extraction). At real prevalence a **fungal** call is "
+            "In clinic fungal is far more common "
+            " At real prevalence a **fungal** call is "
             "~97% reliable, but a **bacterial** call is only ~29% reliable — "
-            "because bacterial is rare. Treat a bacterial call as a prompt to "
+            "because bacterial is less. Treat a bacterial call as a prompt to "
             "confirm, not a conclusion."
         )
 
@@ -174,44 +174,44 @@ def main():
                        f"→ p = {p:.3f} after temperature {pipe.temperature:.3f}")
 
     # ---------------- comparison ----------------
-    with tab_compare:
-        st.subheader("Comparison with CornealAI Model 2")
-        st.dataframe(pd.DataFrame([
-            {"": "Reported AUC", "CornealAI Model 2": "0.949",
-             "This model": f"{pipe.test_auc:.3f}"},
-            {"": "What that number measures",
-             "CornealAI Model 2": "all 686 images — 548 of them its own training data",
-             "This model": "131 held-out images, never seen"},
-            {"": "Best honest figure available",
-             "CornealAI Model 2": "0.862 (138-image val split)",
-             "This model": f"{pipe.test_auc:.3f}"},
-            {"": "Independent test set", "CornealAI Model 2": "none",
-             "This model": "131 images, used once"},
-            {"": "Patient-level splitting", "CornealAI Model 2": "no",
-             "This model": "yes"},
-            {"": "Bag construction",
-             "CornealAI Model 2": "label-dependent — extra lesion tile if bacterial, "
-                                  "extra hypopyon tile if fungal, in train AND val",
-             "This model": "label-free"},
-            {"": "Calibration", "CornealAI Model 2": "temperature, fitted on contaminated data",
-             "This model": f"temperature {pipe.temperature:.3f} on out-of-fold dev"},
-            {"": "Abstention", "CornealAI Model 2": "no", "This model": "yes"},
-        ]), use_container_width=True, hide_index=True)
+    # with tab_compare:
+    #     st.subheader("Comparison with CornealAI Model 2")
+    #     st.dataframe(pd.DataFrame([
+    #         {"": "Reported AUC", "CornealAI Model 2": "0.949",
+    #          "This model": f"{pipe.test_auc:.3f}"},
+    #         {"": "What that number measures",
+    #          "CornealAI Model 2": "all 686 images — 548 of them its own training data",
+    #          "This model": "131 held-out images, never seen"},
+    #         {"": "Best honest figure available",
+    #          "CornealAI Model 2": "0.862 (138-image val split)",
+    #          "This model": f"{pipe.test_auc:.3f}"},
+    #         {"": "Independent test set", "CornealAI Model 2": "none",
+    #          "This model": "131 images, used once"},
+    #         {"": "Patient-level splitting", "CornealAI Model 2": "no",
+    #          "This model": "yes"},
+    #         {"": "Bag construction",
+    #          "CornealAI Model 2": "label-dependent — extra lesion tile if bacterial, "
+    #                               "extra hypopyon tile if fungal, in train AND val",
+    #          "This model": "label-free"},
+    #         {"": "Calibration", "CornealAI Model 2": "temperature, fitted on contaminated data",
+    #          "This model": f"temperature {pipe.temperature:.3f} on out-of-fold dev"},
+    #         {"": "Abstention", "CornealAI Model 2": "no", "This model": "yes"},
+    #     ]), use_container_width=True, hide_index=True)
 
-        st.warning(
-            "**These numbers are not directly comparable, and it would be wrong to "
-            "claim otherwise.** CornealAI's 0.949 includes its own training data. Its "
-            "0.862 validation figure is also contaminated, because the tile planner "
-            "adds a class-specific tile using the label — in training *and* validation. "
-            "Neither can be set against a clean held-out figure. The defensible claim "
-            "is that this is the first uncontaminated measurement of the task, not "
-            "that it scores higher."
-        )
-        st.info(
-            "Both models were built on the same 686-image cohort (Dataset9 + Dataset14), "
-            "so a genuine head-to-head is possible — it would need CornealAI Model 2 "
-            "re-run, with the tile-planner leak removed, on this same locked test set."
-        )
+    #     st.warning(
+    #         "**These numbers are not directly comparable, and it would be wrong to "
+    #         "claim otherwise.** CornealAI's 0.949 includes its own training data. Its "
+    #         "0.862 validation figure is also contaminated, because the tile planner "
+    #         "adds a class-specific tile using the label — in training *and* validation. "
+    #         "Neither can be set against a clean held-out figure. The defensible claim "
+    #         "is that this is the first uncontaminated measurement of the task, not "
+    #         "that it scores higher."
+    #     )
+    #     st.info(
+    #         "Both models were built on the same 686-image cohort (Dataset9 + Dataset14), "
+    #         "so a genuine head-to-head is possible — it would need CornealAI Model 2 "
+    #         "re-run, with the tile-planner leak removed, on this same locked test set."
+    #     )
 
     # ---------------- method ----------------
     with tab_method:
