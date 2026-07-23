@@ -80,17 +80,17 @@ def main():
         st.markdown(
             "Fungal keratitis is far more common in clinic than bacterial. At real "
             "prevalence a **fungal** call is highly reliable, but a **bacterial** "
-            "call is not — bacterial recall was 51–63% across validation cohorts.\n\n"
+            "call is not — bacterial recall was 51–63% across validation .\n\n"
             "**Treat a bacterial call as a prompt to confirm, never as a conclusion.**"
         )
 
-    st.warning(
-        "**Scope:** for images already confirmed as bacterial or fungal keratitis. "
-        "Any other condition — normal, viral, scar, non-infectious — will still "
-        "receive a confident-looking call. In a real review cohort 35% of images "
-        "were out of scope and 27 of 35 were confidently mislabelled. Use behind an "
-        "infection detector, not on unfiltered images."
-    )
+    # st.warning(
+    #     "**Scope:** for images already confirmed as bacterial or fungal keratitis. "
+    #     "Any other condition — normal, viral, scar, non-infectious — will still "
+    #     "receive a confident-looking call. In a real review cohort 35% of images "
+    #     "were out of scope and 27 of 35 were confidently mislabelled. Use behind an "
+    #     "infection detector, not on unfiltered images."
+    # )
 
     # ---------------- predict ----------------
     up = st.file_uploader("Slit-lamp image",
