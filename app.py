@@ -71,8 +71,8 @@ def main():
         cal = getattr(pipe, "cal", None)
         if cal:
             st.metric("Pooled external AUC", f"{cal['pooled_auc']:.3f}")
-            st.caption(f"{cal['n_calibration']} cases, "
-                       f"{len(cal['cohorts'])} independent cohorts")
+            #st.caption(f"{cal['n_calibration']} cases, "
+                      # f"{len(cal['cohorts'])} independent cohorts")
         st.caption(f"Calibration temperature {pipe.temperature:.3f}")
 
         st.divider()
