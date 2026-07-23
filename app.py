@@ -87,13 +87,13 @@ def main():
             "confirm, not a conclusion."
         )
 
-    st.warning(
-        "**Scope:** for images already confirmed as bacterial or fungal keratitis. "
-        "Any other condition — including normal, viral, scar or non-infectious — "
-        "will still receive a confident-looking call. In a real review cohort 35% "
-        "of images were out of scope and 27 of 35 were confidently mislabelled. "
-        "Use behind an infection detector, not on unfiltered images."
-    )
+    # st.warning(
+    #     "**Scope:** for images already confirmed as bacterial or fungal keratitis. "
+    #     "Any other condition — including normal, viral, scar or non-infectious — "
+    #     "will still receive a confident-looking call. In a real review cohort 35% "
+    #     "of images were out of scope and 27 of 35 were confidently mislabelled. "
+    #     "Use behind an infection detector, not on unfiltered images."
+    # )
 
     tab_predict, tab_compare, tab_method = st.tabs(
         ["Predict", "vs CornealAI Model 2", "Method"])
@@ -103,8 +103,7 @@ def main():
         up = st.file_uploader("Slit-lamp image", type=["jpg", "jpeg", "png", "tif", "tiff"])
         if up is None:
             st.info("Upload a slit-lamp photograph of an infected cornea. "
-                    "Full-resolution originals work best — the model reads a "
-                    "3.67 mm window and needs the native pixels.")
+                    "Full-resolution originals work best.")
             return
 
         mode_key = st.radio(
