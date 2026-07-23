@@ -95,9 +95,9 @@ def main():
     #     "Use behind an infection detector, not on unfiltered images."
     # )
 
-    tab_predict, tab_compare, tab_method = st.tabs(
+    tab_predict = st.tabs(
         ["Predict"])
-    # st.tabs(
+    #tab_predict, tab_compare, tab_method=  st.tabs(
     #     ["Predict", "vs CornealAI Model 2", "Method"])
 
     # ---------------- predict ----------------
