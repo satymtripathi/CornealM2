@@ -96,7 +96,9 @@ def main():
     # )
 
     tab_predict, tab_compare, tab_method = st.tabs(
-        ["Predict", "vs CornealAI Model 2", "Method"])
+        ["Predict"])
+    # st.tabs(
+    #     ["Predict", "vs CornealAI Model 2", "Method"])
 
     # ---------------- predict ----------------
     with tab_predict:
@@ -213,36 +215,36 @@ def main():
     #         "re-run, with the tile-planner leak removed, on this same locked test set."
     #     )
 
-    # ---------------- method ----------------
-    with tab_method:
-        st.subheader("How the configuration was chosen")
-        st.markdown(
-            "Tile field of view was swept; the curve is unimodal and peaks at **3.67 mm** "
-            "— which matches the **3.44 mm** median span of the `feathery_margin` sign "
-            "in expert annotations. Those two figures were derived independently."
-        )
-        st.dataframe(pd.DataFrame([
-            {"field of view": "0.92 mm", "AUC": 0.745},
-            {"field of view": "1.83 mm", "AUC": 0.759},
-            {"field of view": "3.67 mm  ←", "AUC": 0.791},
-            {"field of view": "5.50 mm", "AUC": 0.775},
-            {"field of view": "7.33 mm", "AUC": 0.722},
-            {"field of view": "11.7 mm (whole eye)", "AUC": 0.747},
-        ]), use_container_width=True, hide_index=True)
+    # # ---------------- method ----------------
+    # with tab_method:
+    #     st.subheader("How the configuration was chosen")
+    #     st.markdown(
+    #         "Tile field of view was swept; the curve is unimodal and peaks at **3.67 mm** "
+    #         "— which matches the **3.44 mm** median span of the `feathery_margin` sign "
+    #         "in expert annotations. Those two figures were derived independently."
+    #     )
+    #     st.dataframe(pd.DataFrame([
+    #         {"field of view": "0.92 mm", "AUC": 0.745},
+    #         {"field of view": "1.83 mm", "AUC": 0.759},
+    #         {"field of view": "3.67 mm  ←", "AUC": 0.791},
+    #         {"field of view": "5.50 mm", "AUC": 0.775},
+    #         {"field of view": "7.33 mm", "AUC": 0.722},
+    #         {"field of view": "11.7 mm (whole eye)", "AUC": 0.747},
+    #     ]), use_container_width=True, hide_index=True)
 
-        st.markdown(
-            "**What did not work:** attention pooling (overfits at this sample size — "
-            "0.689 vs 0.746 for plain averaging), full pixel fidelity (−0.009), and "
-            "combining multiple scales. Plain mean pooling over 3.67 mm tiles won.\n\n"
-            "**Confounds checked and cleared:** metadata alone gives AUC 0.577, global "
-            "image statistics 0.543, acquisition-only 0.531. No feature separates the "
-            "classes at AUC > 0.60 after correction, so performance is attributable to "
-            "the cornea rather than the camera.\n\n"
-            "**Known limits:** labels are culture-proven but the cohort is "
-            "culture-*positive* only, so culture-negative presentations are unseen. "
-            "The test set is 131 images, giving a wide confidence interval. Only 11 "
-            "images come from rural Vision Centres, which is the deployment target."
-        )
+    #     st.markdown(
+    #         "**What did not work:** attention pooling (overfits at this sample size — "
+    #         "0.689 vs 0.746 for plain averaging), full pixel fidelity (−0.009), and "
+    #         "combining multiple scales. Plain mean pooling over 3.67 mm tiles won.\n\n"
+    #         "**Confounds checked and cleared:** metadata alone gives AUC 0.577, global "
+    #         "image statistics 0.543, acquisition-only 0.531. No feature separates the "
+    #         "classes at AUC > 0.60 after correction, so performance is attributable to "
+    #         "the cornea rather than the camera.\n\n"
+    #         "**Known limits:** labels are culture-proven but the cohort is "
+    #         "culture-*positive* only, so culture-negative presentations are unseen. "
+    #         "The test set is 131 images, giving a wide confidence interval. Only 11 "
+    #         "images come from rural Vision Centres, which is the deployment target."
+    #     )
 
 
 if __name__ == "__main__":
