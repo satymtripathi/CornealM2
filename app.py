@@ -66,7 +66,7 @@ def main():
     with st.sidebar:
         st.header("Model")
         st.metric("Locked test AUC", f"{pipe.test_auc:.3f}")
-        st.caption("131 images, patient-disjoint, used once")
+        #st.caption("131 images, patient-disjoint, used once")
 
         cal = getattr(pipe, "cal", None)
         if cal:
