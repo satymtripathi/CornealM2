@@ -1,4 +1,4 @@
-# LVP Model 2 — Bacterial vs Fungal Keratitis
+#  Model 2 — Bacterial vs Fungal Keratitis
 
 A rebuild of the corneal infection-etiology classifier, from scratch, with an
 evaluation protocol that can survive review.
@@ -155,7 +155,3 @@ python src/00_build_manifest.py
 |---|---|---|---|
 | **1** | **Reference standard** — culture / KOH / smear / confocal for Dataset9+14. Who assigned the organism, on what evidence, and when relative to imaging? | every clinical claim | clinical team |
 | 2 | **2 patients carry both labels** (4 images). Mixed infection, uncertain, or revised diagnosis? | label integrity | clinical team |
-| 3 | **Dataset15 + Dataset18** (212 fungal images, 811 `feathery_margin` polygons) — not on this machine | Phase 6 | data team |
-| 4 | **Dataset22** (110 bacterial/fungal) — unused, would grow the cohort ~16% | cohort size | data team |
-| 5 | **Vision Centre coverage is 11 images** (3 bacterial / 8 fungal). The deployment target is rural Vision Centres but training is ~98% tertiary-centre capture. | external validity | data team |
-| 6 | Clinical covariates at intake — vegetative trauma, contact lens, symptom duration, prior steroid | Phase 4+ | clinical team |
