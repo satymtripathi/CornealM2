@@ -17,13 +17,12 @@ Image.MAX_IMAGE_PIXELS = None
 
 st.set_page_config(page_title="LVP Model 2 - Bacterial vs Fungal", layout="wide")
 
-# Selective first = default. It halves the dangerous fungal->bacterial error
-# versus Balanced (2 vs 7 per 100 patients) and is the most accurate on the
-# cases it answers (81.2%).
+# Two modes only. Balanced was removed: it always answers, but makes the
+# dangerous fungal->bacterial error 3.5x more often (7 vs 2 per 100 patients).
+# Cautious is the default - it refers unclear cases for culture instead of guessing.
 MODE_LABELS = {
-    "selective": "Selective (recommended)",
-    "fungal_safety": "Fungal safety",
-    "balanced": "Balanced",
+    "selective": "Cautious — refer unclear cases to culture (recommended)",
+    "fungal_safety": "Fungal-safety — maximise fungal detection",
 }
 
 
@@ -102,11 +101,12 @@ def main():
         return
 
     mode_key = st.radio(
-        "Decision mode", list(MODE_LABELS), horizontal=True,
+        "Decision mode", list(MODE_LABELS),
         format_func=lambda k: MODE_LABELS[k],
-        help="Selective may answer 'Indeterminate' and is the most accurate on the "
-             "cases it does answer. Fungal safety maximises fungal recall. Balanced "
-             "always answers but makes the dangerous error 3.5x more often.")
+        help="Cautious refers unclear cases for culture and is the most accurate on "
+             "the cases it does commit to (90% on the blind set). Fungal-safety never "
+             "abstains and catches the most fungal cases, at the cost of more "
+             "bacterial cases sent for antifungals.")
 
     rgb = np.asarray(Image.open(up).convert("RGB"))
     st.caption(f"{rgb.shape[1]} × {rgb.shape[0]} px")
@@ -126,13 +126,13 @@ def main():
     c1, c2, c3 = st.columns([1.2, 1, 1])
     with c1:
         if verdict == "Fungal":
-            st.success(f"### {verdict}")
+            st.success("### Fungal")
         elif verdict == "Bacterial":
-            st.info(f"### {verdict}")
+            st.info("### Bacterial")
             st.caption("Least reliable output — confirm before acting.")
         else:
-            st.warning(f"### {verdict}")
-            st.caption("Below the confidence required for a call — "
+            st.warning("### Send for culture")
+            st.caption("Evidence is not clear enough for a confident call — "
                        "recommend smear / culture / confocal.")
     with c2:
         st.metric("P(fungal)", f"{p:.3f}")
