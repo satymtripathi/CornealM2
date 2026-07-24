@@ -120,19 +120,18 @@ class Pipeline:
         prevalence and did not transfer (coverage 81.5% -> 76.8%, accuracy on
         covered 88.7% -> 77.6%).
         """
-        m = {"balanced": {"kind": "forced", "t": 0.50,
-                          "desc": "Balanced - highest overall accuracy (77% external)"},
-             "fungal_safety": {"kind": "forced", "t": 0.25,
-                               "desc": "Maximise fungal recall (97%) and minimise the "
-                                       "dangerous fungal->bacterial error (3%), at the "
-                                       "cost of bacterial recall (29%)"}}
+        m = {"fungal_safety": {"kind": "forced", "t": 0.25,
+                               "desc": "Always answers. Catches 97% of fungal cases; the "
+                                       "cost is more bacterial cases called fungal."}}
         if self.cal and self.cal.get("selective_band"):
             lo, hi = self.cal["selective_band"]
             m["selective"] = {"kind": "abstain", "lo": lo, "hi": hi,
-                              "desc": "May answer 'Indeterminate' - 81% accurate on the 78% of cases it answers"}
+                              "desc": "Answers only when confident and marks the rest "
+                                      "'Not Sure'. 81% accurate on the 78% it commits to."}
         elif self.op:
             m["selective"] = {"kind": "abstain", "lo": self.op["lo"], "hi": self.op["hi"],
-                              "desc": "May answer 'Indeterminate' (internal calibration)"}
+                              "desc": "Answers only when confident and marks the rest "
+                                      "'Not Sure' (internal calibration)."}
         return m
 
     @staticmethod
@@ -140,7 +139,7 @@ class Pipeline:
         if mode["kind"] == "forced":
             return "Fungal" if p >= mode["t"] else "Bacterial"
         return ("Fungal" if p >= mode["hi"]
-                else "Bacterial" if p <= mode["lo"] else "Indeterminate")
+                else "Bacterial" if p <= mode["lo"] else "Not Sure")
 
     # ---------------- stages ----------------
     def segment_limbus(self, rgb):
@@ -233,7 +232,8 @@ class Pipeline:
 
         modes = self.modes()
         labels = {k: self.apply_mode(p, v) for k, v in modes.items()}
-        label = labels["balanced"]
+        # default label = the recommended (cautious/selective) mode if present
+        label = labels.get("selective") or next(iter(labels.values()))
 
         # px -> mm via limbus width
         x_, y_, w_, h_ = cv2.boundingRect(contour)

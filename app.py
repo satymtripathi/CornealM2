@@ -79,7 +79,7 @@ def main():
         st.markdown(
             "Fungal keratitis is far more common in clinic than bacterial. At real "
             "prevalence a **fungal** call is highly reliable, but a **bacterial** "
-            "call is not — bacterial recall was 51–63% across validation .\n\n"
+            "call is not — bacterial recall was 51–63% across validation cohorts.\n\n"
             "**Treat a bacterial call as a prompt to confirm, never as a conclusion.**"
         )
 
@@ -131,9 +131,9 @@ def main():
             st.info("### Bacterial")
             st.caption("Least reliable output — confirm before acting.")
         else:
-            st.warning("### Send for culture")
-            st.caption("Evidence is not clear enough for a confident call — "
-                       "recommend smear / culture / confocal.")
+            st.warning("### Not Sure")
+            st.caption("Not confident enough to call — recommend smear / culture / "
+                       "confocal.")
     with c2:
         st.metric("P(fungal)", f"{p:.3f}")
         st.progress(float(p))
