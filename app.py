@@ -76,6 +76,8 @@ def main():
         '<div class="brandbar"><h1>Keratitis AI — Bacterial vs Fungal</h1>'
         '<p>Slit-lamp decision support · frozen DINOv2 · lesion-aware · calibrated & abstaining</p></div>',
         unsafe_allow_html=True)
+    st.caption("⚠️ Decision aid only — this tool can make mistakes. "
+               "Please confirm the result clinically before acting.")
 
     try:
         pipe = load_pipeline(_srcver())
@@ -99,9 +101,7 @@ def main():
         st.caption(MODE_HELP.get(mode_key, ""))
 
         st.divider()
-        st.caption("**Fungal** calls are reliable; a **bacterial** call is rarer and "
-                   "should be confirmed, not acted on alone. For images already "
-                   "confirmed as bacterial or fungal keratitis.")
+        st.caption("For images already confirmed as bacterial or fungal keratitis.")
 
     up = st.file_uploader("Upload a slit-lamp image",
                           type=["jpg", "jpeg", "png", "tif", "tiff"])
@@ -123,9 +123,9 @@ def main():
     left, right = st.columns([1, 1.15])
     with left:
         cls = {"Fungal": "v-fung", "Bacterial": "v-bact"}.get(verdict, "v-uns")
-        sub = {"Fungal": "Start antifungal management",
-               "Bacterial": "Least reliable output — confirm before acting",
-               "Not Sure": "Recommend smear / culture / confocal"}[verdict]
+        sub = {"Fungal": "Suggestive of fungal keratitis",
+               "Bacterial": "Suggestive of bacterial keratitis",
+               "Not Sure": "Evidence unclear — smear / culture / confocal advised"}[verdict]
         st.markdown(f'<div class="verdict {cls}"><div class="lab">{verdict}</div>'
                     f'<div class="sub">{sub}</div></div>', unsafe_allow_html=True)
         st.write("")
