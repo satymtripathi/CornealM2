@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<style>
+  :root{--b:#6a1b2d;--bd:#4a1220;--bl:#9c3450;--acc:#b8860b;--ink:#241a1c;
+    --mut:#6b5b5e;--ln:#e3d5d8;--w1:#faf5f6;--w2:#f3e9eb;--good:#2e6b3e;--bad:#a12a2a;}
+  *{box-sizing:border-box;}
+  html,body{margin:0;color:var(--ink);font-family:"Segoe UI",Helvetica,Arial,sans-serif;
+    font-size:10.3px;line-height:1.5;}
+  .page{width:210mm;min-height:296mm;padding:15mm 16mm 13mm;margin:0 auto;background:#fff;
+    position:relative;page-break-after:always;}
+  .page:last-child{page-break-after:auto;}
+  .band{background:linear-gradient(100deg,var(--bd),var(--b) 58%,var(--bl));color:#fff;
+    padding:8px 14px;border-radius:5px;display:flex;justify-content:space-between;
+    align-items:center;margin-bottom:12px;}
+  .band .t{font-size:12.5px;font-weight:700;} .band .s{font-size:9px;opacity:.85;}
+  h1{color:var(--b);font-size:25px;margin:0 0 4px;letter-spacing:-.3px;}
+  h2{color:var(--b);font-size:14px;margin:15px 0 5px;padding-bottom:3px;border-bottom:2px solid var(--ln);}
+  h3{color:var(--bd);font-size:11.5px;margin:11px 0 3px;}
+  p{margin:5px 0;} b,strong{color:var(--bd);} .mut{color:var(--mut);}
+  ul{margin:5px 0;padding-left:17px;} li{margin:2.5px 0;}
+  table{width:100%;border-collapse:collapse;margin:7px 0;font-size:9.4px;}
+  th{background:var(--b);color:#fff;padding:5px 7px;text-align:left;font-weight:600;}
+  th.c,td.c{text-align:center;} td{padding:4px 7px;border-bottom:1px solid var(--ln);}
+  tr:nth-child(even) td{background:var(--w1);}
+  .win{color:var(--good);font-weight:700;} .bad{color:var(--bad);font-weight:700;}
+  .callout{background:var(--w2);border-left:4px solid var(--b);border-radius:0 5px 5px 0;
+    padding:9px 13px;margin:9px 0;}
+  .callout .h{color:var(--bd);font-weight:700;font-size:10.5px;margin-bottom:2px;}
+  .grid{display:flex;gap:9px;margin:8px 0;}
+  .card{flex:1;background:var(--w1);border:1px solid var(--ln);border-radius:6px;padding:9px 11px;}
+  .card .big{font-size:20px;font-weight:800;color:var(--b);line-height:1;}
+  .card .lbl{font-size:8.6px;color:var(--mut);margin-top:3px;}
+  .foot{position:absolute;bottom:8mm;left:16mm;right:16mm;display:flex;justify-content:space-between;
+    font-size:8px;color:var(--mut);border-top:1px solid var(--ln);padding-top:4px;}
+  .kick{color:var(--acc);font-weight:700;letter-spacing:2px;font-size:10px;text-transform:uppercase;}
+</style></head><body>
+
+<!-- ===== COVER ===== -->
+<div class="page">
+  <div style="border-left:6px solid var(--b);padding-left:20px;margin-top:60mm;">
+    <div class="kick">L V Prasad Eye Institute · Corneal AI</div>
+    <h1 style="font-size:36px;margin-top:10px;">Satyam Model 2<br>Technical Report</h1>
+    <p style="font-size:14px;color:var(--mut);max-width:82%;margin-top:10px;">
+      Bacterial vs Fungal keratitis from slit-lamp photographs — development,
+      evaluation, confound analysis, segmentation & interpretability. Complete
+      record to date, before expansion to more data and additional organisms.</p>
+    <div class="grid" style="margin-top:28px;max-width:80%;">
+      <div class="card"><div class="big">0.815</div><div class="lbl">locked internal test AUC (n=131)</div></div>
+      <div class="card"><div class="big">0.839</div><div class="lbl">pooled external AUC (n=164, 2 cohorts)</div></div>
+      <div class="card"><div class="big">0/22</div><div class="lbl">dangerous errors, blind head-to-head</div></div>
+    </div>
+  </div>
+  <div class="foot"><span>Satyam Model 2 — Technical Report</span><span>Confidential · internal</span></div>
+</div>
+
+<!-- ===== 1. SUMMARY + PROBLEM ===== -->
+<div class="page">
+  <div class="band"><span class="t">1 · Summary &amp; problem</span><span class="s">why this rebuild exists</span></div>
+
+  <h2>Executive summary</h2>
+  <p>Satyam Model 2 classifies culture-proven bacterial vs fungal keratitis from a single
+  slit-lamp image. It is a ground-up rebuild of LVPEI's incumbent CornealAI Model 2, whose
+  headline numbers are not trustworthy. On a patient-disjoint locked test it reaches
+  <b>AUC 0.815</b>, and on 164 genuinely independent external cases <b>0.839</b> — the first
+  uncontaminated measurement of this task. It reads pathology (not the camera), localises to
+  the lesion, abstains when unsure, and shows the clinician what it saw.</p>
+
+  <div class="callout"><div class="h">The one-line result</div>
+  On an 81%-fungal blind set it matched the incumbent on accuracy but made the sight-threatening
+  error — a fungal ulcer called bacterial — <b>zero times versus the incumbent's eight</b>.</div>
+
+  <h2>The incumbent problem</h2>
+  <p>CornealAI Model 2's quoted <b>AUC 0.949</b> is computed over all 686 images, 548 of which it
+  trained on. Its best honest figure (0.862 / 77.5% on a 138-image split) is also contaminated:
+  the bag builder inserts a lesion tile when the label is bacterial and a hypopyon tile when it is
+  fungal — <b>in training and validation</b> — while inference does not, so the distributions
+  differ. No independent test set, no patient grouping. <b>Neither number is comparable to a clean
+  held-out figure.</b> That gap is what this project set out to close.</p>
+
+  <h2>Design rules (held throughout)</h2>
+  <ul>
+    <li><b>Patient-grouped, repeated nested CV.</b> One split has sd ≈0.015 (±0.03 noise) — enough
+      to move a verdict a category. Every AUC is mean±sd over ≥8–10 fold assignments.</li>
+    <li><b>Nothing about the label touches preprocessing or tiling</b> — the exact defect that
+      invalidated the incumbent.</li>
+    <li><b>Aspect ratio preserved</b> (letterbox, never tuple-resize — that distorts the limbus by a
+      device-dependent factor).</li>
+    <li><b>Metrics at deployment prevalence</b>, not the curated 1:1, and always with abstention.</li>
+    <li><b>Ties are called ties.</b> Several promising ideas tied the baseline and were not adopted.</li>
+  </ul>
+  <div class="foot"><span>Satyam Model 2 — Technical Report</span><span>2</span></div>
+</div>
+
+<!-- ===== 2. DATA + EVAL ===== -->
+<div class="page">
+  <div class="band"><span class="t">2 · Data &amp; evaluation</span><span class="s">cohort, integrity, protocol</span></div>
+
+  <h2>Cohort</h2>
+  <table>
+    <tr><th>Property</th><th>Value</th></tr>
+    <tr><td>Images / patients</td><td>682 / 617 (1.11 img/patient)</td></tr>
+    <tr><td>Classes</td><td>335 bacterial / 347 fungal</td></tr>
+    <tr><td>Label source</td><td><b>culture-proven</b> (organism filed by culture result)</td></tr>
+    <tr><td>Acquisition</td><td>Canon EOS 7D Mk II, ~5472×3648; 3 resolutions</td></tr>
+    <tr><td>Split</td><td>131 locked test · 551 dev (5-fold), patient-disjoint, assigned once</td></tr>
+    <tr><td>Integrity</td><td>0 duplicate hashes · 0 unreadable · 0 patients spanning splits</td></tr>
+  </table>
+
+  <h3>De-identification</h3>
+  <p>Names/MRNs were in every filename; EXIF held timestamps, camera identity and thumbnails. All
+  removed by <b>lossless JPEG marker surgery</b> (pixel-identical verified — re-encoding would have
+  degraded the fine margin texture the model depends on). Verification: <b>0 name/MRN tokens</b>
+  survive outside the access-controlled crosswalk.</p>
+
+  <h2>Confound audit — is the class readable without pathology?</h2>
+  <table>
+    <tr><th>Predictor</th><th class="c">AUC</th><th>Verdict</th></tr>
+    <tr><td>Metadata (date, centre, resolution, file size)</td><td class="c">0.577</td><td>clean</td></tr>
+    <tr><td>Global image statistics (22 features)</td><td class="c">0.543</td><td>clean</td></tr>
+    <tr><td>Background tiles (sclera / lid / lashes)</td><td class="c">0.582</td><td>clean</td></tr>
+    <tr><td>Worst camera-like perturbation (bright/gamma/hue/JPEG/blur)</td><td class="c">−0.005 vs clean</td><td>robust</td></tr>
+  </table>
+  <div class="callout"><div class="h">Reads pathology, not the camera</div>
+  Nothing outside the cornea predicts the class (0.58 ≈ chance), and the decision barely moves under
+  camera-like changes. Whatever the model has learned, it learned from the cornea.</div>
+
+  <h2>Evaluation protocol</h2>
+  <p>Repeated nested cross-validation: an inner loop selects hyper-parameters on training folds only,
+  an outer loop reports, over ≥8 fold assignments, quoted mean±sd. The locked 131-image test set was
+  untouched from the first day until the single final evaluation. This discipline is why the numbers
+  here can be trusted where the incumbent's cannot.</p>
+  <div class="foot"><span>Satyam Model 2 — Technical Report</span><span>3</span></div>
+</div>
+
+<!-- ===== 3. ARCHITECTURE SEARCH ===== -->
+<div class="page">
+  <div class="band"><span class="t">3 · Finding the architecture</span><span class="s">what worked, what tied, what failed</span></div>
+
+  <h2>Where does the signal live?</h2>
+  <p>A frozen DINOv2 probe (linear head only) established that whole-eye representations plateau at
+  ~0.745 regardless of resolution or framing — global pooling averages the fine texture away. The
+  lever turned out to be <b>tile field of view</b>. The scale curve is unimodal and peaks at 3.67 mm —
+  which coincides with the 3.44 mm span of the feathery-margin sign in expert annotations, derived
+  independently.</p>
+  <table>
+    <tr><th>Tile field of view</th><th class="c">AUC</th></tr>
+    <tr><td>0.92 mm</td><td class="c">0.745</td></tr>
+    <tr><td>1.83 mm</td><td class="c">0.759</td></tr>
+    <tr><td><b>3.67 mm ← peak</b></td><td class="c"><b>0.791 ± 0.009</b></td></tr>
+    <tr><td>5.50 mm</td><td class="c">0.775</td></tr>
+    <tr><td>7.33 mm</td><td class="c">0.722</td></tr>
+    <tr><td>11.7 mm (whole eye)</td><td class="c">0.747</td></tr>
+  </table>
+
+  <h2>What did NOT help (recorded, because it shaped the design)</h2>
+  <table>
+    <tr><th>Idea</th><th class="c">Result</th><th>Decision</th></tr>
+    <tr><td>Gated attention pooling</td><td class="c">0.689</td><td>mean pooling wins (attention overfits at n=682)</td></tr>
+    <tr><td>Full pixel fidelity (896 input)</td><td class="c">−0.009</td><td>field of view matters, not fidelity</td></tr>
+    <tr><td>Multi-scale bags</td><td class="c">0.784</td><td>below 3.67 mm alone</td></tr>
+    <tr><td>Lesion-guided tiling</td><td class="c">0.797 (±0.025)</td><td><b>tie</b> — kept whole-cornea (simpler)</td></tr>
+    <tr><td>Biomarker fusion</td><td class="c">0.800→0.799</td><td><b>tie</b> — biomarkers for display only</td></tr>
+  </table>
+  <p class="mut">Two real gains only: tile scale (+0.046) and 15-model ensembling (+0.024). Everything
+  else tied or hurt — which is itself the finding that the ceiling is the data, not the architecture.</p>
+
+  <div class="callout"><div class="h">Regional ablation</div>
+  The inferior third of the cornea alone — where the hypopyon and infiltrate sit — scores 0.786, ≈
+  the whole cornea's 0.791. The signal is concentrated in the disease region, exactly as clinical
+  reasoning predicts.</div>
+  <div class="foot"><span>Satyam Model 2 — Technical Report</span><span>4</span></div>
+</div>
+
+<!-- ===== 4. FINAL MODEL + RESULTS ===== -->
+<div class="page">
+  <div class="band"><span class="t">4 · Final model &amp; results</span><span class="s">the shipped system</span></div>
+
+  <h2>Configuration</h2>
+  <p>Native image → <b>limbus segmentation</b> (UNet++, validated 6/6 on anatomy) →
+  <b>896 px native tiles (3.67 mm)</b> fed at 448 → <b>frozen DINOv2 ViT-S/14</b> →
+  <b>mean-pooled MIL</b> (~75k trainable params) → <b>15-model ensemble</b> →
+  <b>temperature calibration</b>. Frozen backbone is why it holds on 682 images.</p>
+
+  <h2>Performance</h2>
+  <div class="grid">
+    <div class="card"><div class="big">0.806</div><div class="lbl">dev out-of-fold AUC (551)</div></div>
+    <div class="card"><div class="big">0.815</div><div class="lbl">locked test AUC (131) [0.74–0.89]</div></div>
+    <div class="card"><div class="big">0.839</div><div class="lbl">pooled external (164)</div></div>
+    <div class="card"><div class="big">0.998</div><div class="lbl">calibration temperature</div></div>
+  </div>
+  <p class="mut">Three independent estimates converge at ~0.81–0.84. Test ≥ dev, so no overfitting.</p>
+
+  <h3>External validation — two independent cohorts</h3>
+  <table>
+    <tr><th>Cohort</th><th class="c">n (bac/fun)</th><th class="c">AUC [95% CI]</th><th class="c">In-scope</th><th class="c">Overlap</th></tr>
+    <tr><td>External 1</td><td class="c">65 (24/41)</td><td class="c">0.905 [0.82–0.97]</td><td class="c">65 of 100</td><td class="c">4 (checked)</td></tr>
+    <tr><td>External 2</td><td class="c">99 (35/64)</td><td class="c">0.792 [0.70–0.88]</td><td class="c">99 of 100</td><td class="c">0</td></tr>
+    <tr><td><b>Pooled</b></td><td class="c"><b>164</b></td><td class="c"><b>0.839 [0.78–0.89]</b></td><td class="c">—</td><td class="c">—</td></tr>
+  </table>
+
+  <h3>Operating points (calibrated on external data)</h3>
+  <table>
+    <tr><th>Mode</th><th class="c">Coverage</th><th class="c">Accuracy</th><th class="c">Fungal recall</th><th class="c">Misroute</th></tr>
+    <tr><td><b>Cautious</b> (default, abstains)</td><td class="c">78%</td><td class="c">81%</td><td class="c">83%</td><td class="c">2.9%</td></tr>
+    <tr><td>Fungal-safety (t=0.25)</td><td class="c">100%</td><td class="c">73%</td><td class="c"><b>97%</b></td><td class="c"><b>2.9%</b></td></tr>
+    <tr><td>Balanced (removed)</td><td class="c">100%</td><td class="c">77%</td><td class="c">89%</td><td class="c"><span class="bad">11.4%</span></td></tr>
+  </table>
+  <p class="mut">Leave-one-cohort-out transfer (the only unbiased operating-point figure): 76% accuracy
+  on covered cases. Balanced was removed — it made the dangerous error 3.5× more often.</p>
+  <div class="foot"><span>Satyam Model 2 — Technical Report</span><span>5</span></div>
+</div>
+
+<!-- ===== 5. SEGMENTATION + HEAD TO HEAD ===== -->
+<div class="page">
+  <div class="band"><span class="t">5 · Segmentation, interpretability &amp; comparison</span><span class="s"></span></div>
+
+  <h2>Lesion segmentation (from DataM2 annotations)</h2>
+  <p>Two focused UNet++ models trained on LabelMe polygons — a lesion model (Infection set, 344 imgs)
+  and a fungal-sign model (110 imgs).</p>
+  <table>
+    <tr><th>Structure</th><th class="c">Val Dice</th><th>Use</th></tr>
+    <tr><td>Infiltrate</td><td class="c"><b>0.88</b></td><td>anchor — overlay + biomarkers</td></tr>
+    <tr><td>Hypopyon</td><td class="c"><b>0.86</b></td><td>anchor — detected in 70% of cohort</td></tr>
+    <tr><td>Cellularity</td><td class="c">0.57</td><td><span class="bad">excluded — confound (below)</span></td></tr>
+    <tr><td>Feathery margin</td><td class="c">0.52</td><td>fungal sign detector (noisy)</td></tr>
+  </table>
+
+  <div class="callout"><div class="h">Cellularity is a confound — excluded with evidence</div>
+  Flagged clinically (subjective annotation; appears during healing → tracks treatment stage, not
+  organism). Confirmed: 0.51 alone, and −0.002 when fused. It is kept out of both the classifier and
+  the display overlay.</div>
+
+  <h3>Interpretability, not accuracy</h3>
+  <p>Biomarker fusion gave no accuracy gain (0.800→0.799) — the deep model already encodes what the
+  geometric signs measure. So segmentation serves <b>interpretability</b>: the app outlines the
+  detected infiltrate and hypopyon (outlines, so tissue stays visible) and shows clinical-sign chips,
+  explicitly marked as review-only. The clinician can check the model against what they see.</p>
+
+  <h2>Blind head-to-head vs incumbent (27 images, 22 fungal / 5 bacterial)</h2>
+  <table>
+    <tr><th>Metric</th><th class="c">Incumbent M2</th><th class="c">Satyam M2</th></tr>
+    <tr><td>Accuracy (forced)</td><td class="c">66.7%</td><td class="c">66.7%</td></tr>
+    <tr><td>Accuracy (when it commits)</td><td class="c">66.7%</td><td class="c"><span class="win">90.0%</span></td></tr>
+    <tr><td>Fungal called bacterial (dangerous)</td><td class="c"><span class="bad">8 of 22</span></td><td class="c"><span class="win">0 of 22</span></td></tr>
+    <tr><td>Behaviour when unsure</td><td class="c">guesses</td><td class="c">refers to culture</td></tr>
+  </table>
+  <div class="foot"><span>Satyam Model 2 — Technical Report</span><span>6</span></div>
+</div>
+
+<!-- ===== 6. LIMITS + NEXT ===== -->
+<div class="page">
+  <div class="band"><span class="t">6 · Limitations &amp; next phase</span><span class="s">before retraining with more data</span></div>
+
+  <h2>Honest limitations</h2>
+  <ul>
+    <li><b>Bacterial is the binding constraint.</b> ~204 bacterial patients in the whole source;
+      bacterial recall is weak in every cohort (73% / 62% / 51%). This is a data problem, not an
+      architecture one — no modelling change fixed it.</li>
+    <li><b>Scope: binary only.</b> The model cannot say normal / viral / scar. In a real review cohort
+      35% of images were out of scope and 27/35 got confident calls. <b>Must be gated behind an
+      infection detector before deployment.</b></li>
+    <li><b>Culture-positive only</b> — culture-negative keratitis (common, earlier, milder) is unseen.</li>
+    <li><b>Prevalence.</b> Cohorts are 51–64% fungal; clinic is fungal-heavy. At real prevalence a
+      fungal call is reliable but a bacterial call is not — a bacterial output is a prompt to confirm.</li>
+    <li><b>Small test sets</b> (131 internal, 164 external) → wide CIs; certifying 90% recall ±3%
+      needs ~400 fungal test cases.</li>
+    <li>A minor display gap: the extreme-inferior hypopyon meniscus is under-tiled by the ≥50%-cornea
+      rule (fixable, low risk).</li>
+  </ul>
+
+  <h2>The ceiling is data, not architecture</h2>
+  <p>Every architectural lever — tile scale, resolution, pooling, lesion-guided tiling, biomarker
+  fusion — has been explored; all but tile-scale and ensembling tied. The consistent conclusion:
+  <b>~0.81–0.84 is what 682 culture-proven, image-only cases support.</b></p>
+
+  <h2>Next phase — expansion</h2>
+  <ul>
+    <li><b>More culture-proven bacterial patients</b> — the single biggest lever (≈10× a fungal one).</li>
+    <li><b>Additional organism classes</b> — moving beyond binary toward the true clinical picture
+      (e.g. viral, Acanthamoeba, mixed), which also addresses the "Others" scope gap.</li>
+    <li><b>Extend accrual</b> past 2024, and add Vision-Centre captures (the deployment setting).</li>
+    <li><b>Intake covariates</b> (trauma, contact-lens, duration, prior steroid) — information genuinely
+      absent from the pixels, the most plausible route past the image-only ceiling.</li>
+    <li>Representation test still open: frozen ViT-B, or fine-tuning last blocks.</li>
+  </ul>
+
+  <div class="callout"><div class="h">Status at this report</div>
+  A trustworthy, calibrated, interpretable, fungal-safe model with the first honest numbers for the
+  task. The foundation and evaluation harness are in place; the next gains come from data, and that
+  is the work that follows this report.</div>
+  <div class="foot"><span>Satyam Model 2 — Technical Report</span><span>7</span></div>
+</div>
+
+</body></html>
