@@ -124,8 +124,7 @@ def main():
     with right:
         bm = res.get("biomarkers")
         if bm:
-            st.markdown("**Clinical signs** &nbsp;<span style='color:#888;font-size:11px'>"
-                        "(review only — not used in the decision)</span>", unsafe_allow_html=True)
+            st.markdown("**Clinical signs**")
             chips = [f"Hypopyon: {'present' if bm['hypopyon_present'] else 'absent'}"]
             if bm["hypopyon_present"]:
                 chips.append(f"Flatness {bm['hypopyon_flatness']:.1f}")
