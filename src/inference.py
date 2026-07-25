@@ -110,6 +110,34 @@ class Pipeline:
                                           num_classes=0, img_size=self.cfg["input_px"])
         self.backbone.eval().to(DEVICE)
 
+        # Lesion segmenter (infiltrate/hypopyon/cellularity/glare) - for the
+        # interpretability overlay and biomarkers. It does NOT feed the decision:
+        # fusing biomarkers gave no accuracy gain (0.800 -> 0.799). Display only.
+        self.lesion = None
+        lp = ROOT / "models" / "lesion_seg" / "lesion_unetpp.pth"
+        if lp.exists():
+            lk = torch.load(lp, map_location=DEVICE, weights_only=False)
+            self.lesion_classes = lk["config"]["classes"]
+            self.lesion_size = lk["config"]["img_size"]
+            self.lesion = smp.UnetPlusPlus(lk["config"]["encoder_name"],
+                                           encoder_weights=None, in_channels=3,
+                                           classes=len(self.lesion_classes))
+            self.lesion.load_state_dict(lk["state_dict"])
+            self.lesion.eval().to(DEVICE)
+
+    def segment_lesion(self, rgb):
+        """Returns a native-resolution label map (0..n_classes-1) or None."""
+        if self.lesion is None:
+            return None
+        H, W = rgb.shape[:2]
+        x = cv2.resize(rgb, (self.lesion_size, self.lesion_size), interpolation=cv2.INTER_AREA)
+        x = ((x.astype(np.float32) / 255.0 - IMNET_MEAN) / IMNET_STD).transpose(2, 0, 1)
+        with torch.no_grad():
+            with torch.autocast("cuda", dtype=torch.float16, enabled=(DEVICE == "cuda")):
+                lab = self.lesion(torch.from_numpy(x).unsqueeze(0).to(DEVICE)).argmax(1)[0]
+        return cv2.resize(lab.cpu().numpy().astype(np.uint8), (W, H),
+                          interpolation=cv2.INTER_NEAREST)
+
     # ---------------- decision modes ----------------
     def modes(self):
         """
@@ -239,7 +267,7 @@ class Pipeline:
         x_, y_, w_, h_ = cv2.boundingRect(contour)
         mm_per_px = WTW_MM / w_ if w_ > 0 else np.nan
 
-        return {
+        out = {
             "p_fungal": float(p), "logit": bag_logit, "label": label,
             "labels_by_mode": labels, "modes": modes,
             "contour": contour, "mask": mask,
@@ -248,10 +276,62 @@ class Pipeline:
             "limbus_w_px": int(w_), "tile_mm": crop * float(mm_per_px),
         }
 
+        # lesion segmentation + biomarkers (display / interpretability only)
+        lesion_lab = self.segment_lesion(rgb)
+        if lesion_lab is not None:
+            import biomarkers as _B
+            cid = {c: self.lesion_classes.index(c)
+                   for c in ("infiltrate", "hypopyon", "cellularity", "glare")}
+            out["lesion_label"] = lesion_lab
+            out["lesion_classes"] = self.lesion_classes
+            out["biomarkers"] = _B.compute(lesion_lab, cid, mask)
+        return out
+
 
 def overlay_limbus(rgb, contour, max_side=900):
     vis = rgb.copy()
     cv2.drawContours(vis, [contour.reshape(-1, 1, 2)], -1, (0, 255, 0), max(2, rgb.shape[1] // 700))
+    s = max_side / max(vis.shape[:2])
+    return cv2.resize(vis, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
+
+
+LESION_COLORS = {           # RGB, clinician-facing overlay
+    "infiltrate": (255, 60, 60),      # red - dense ulcer core
+    "hypopyon": (255, 0, 255),        # magenta - pus level
+    "cellularity": (255, 190, 0),     # amber - cellular halo (exploratory)
+    "glare": (255, 255, 255),         # white - specular (masked out of decision)
+}
+
+
+def lesion_overlay(rgb, res, max_side=900, show=("infiltrate", "hypopyon", "cellularity"),
+                   fill_alpha=0.12):
+    """
+    Outline the detected lesion components so the tissue under them stays visible
+    (a solid fill hides exactly what the clinician needs to see). A faint fill
+    hints the region; a bold contour marks its boundary. Display only.
+    """
+    lab = res.get("lesion_label")
+    if lab is None:
+        return overlay_limbus(rgb, res["contour"], max_side)
+    classes = res["lesion_classes"]
+    vis = rgb.copy()
+    t = max(2, rgb.shape[1] // 500)                       # contour thickness
+
+    for name in show:
+        if name not in classes:
+            continue
+        m = ((lab == classes.index(name)) & (res["mask"] > 0)).astype(np.uint8)
+        if not m.any():
+            continue
+        col = LESION_COLORS[name]
+        if fill_alpha > 0:                               # faint tint, tissue still visible
+            tint = vis.copy(); tint[m > 0] = col
+            vis = cv2.addWeighted(tint, fill_alpha, vis, 1 - fill_alpha, 0)
+        cnts, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = [c for c in cnts if cv2.contourArea(c) > 0.0002 * m.size]
+        cv2.drawContours(vis, cnts, -1, col, t)
+
+    cv2.drawContours(vis, [res["contour"].reshape(-1, 1, 2)], -1, (0, 255, 0), t)
     s = max_side / max(vis.shape[:2])
     return cv2.resize(vis, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
 

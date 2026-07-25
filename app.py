@@ -1,5 +1,5 @@
 """
-LVP Model 2 - Bacterial vs Fungal Keratitis
+LVP Model 2 — Bacterial vs Fungal Keratitis
 
     streamlit run app.py
 """
@@ -15,32 +15,54 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 Image.MAX_IMAGE_PIXELS = None
 
-st.set_page_config(page_title="LVP Model 2 - Bacterial vs Fungal", layout="wide")
+st.set_page_config(page_title="Keratitis AI — Bacterial vs Fungal",
+                   page_icon="👁", layout="wide")
 
-# Two modes only. Balanced was removed: it always answers, but makes the
-# dangerous fungal->bacterial error 3.5x more often (7 vs 2 per 100 patients).
-# Cautious is the default - it refers unclear cases for culture instead of guessing.
-MODE_LABELS = {
-    "selective": "Cautious — refer unclear cases to culture (recommended)",
-    "fungal_safety": "Fungal-safety — maximise fungal detection",
+# Two modes only. Balanced was removed: it always answers but makes the
+# dangerous fungal->bacterial error 3.5x more often. Cautious is the default.
+MODES = {
+    "selective": "Cautious",
+    "fungal_safety": "Fungal-safety",
+}
+MODE_HELP = {
+    "selective": "Refers unclear cases for culture. Most accurate on the cases it commits to.",
+    "fungal_safety": "Never abstains. Catches the most fungal cases; more bacterial cases go to antifungals.",
 }
 
+CSS = """
+<style>
+#MainMenu, footer, header {visibility: hidden;}
+.block-container {padding-top: 2rem; max-width: 1150px;}
+h1, h2, h3 {color: #6a1b2d;}
+.brandbar {background:linear-gradient(100deg,#4a1220,#6a1b2d 60%,#9c3450);
+  color:#fff;padding:16px 22px;border-radius:10px;margin-bottom:6px;}
+.brandbar h1 {color:#fff;margin:0;font-size:23px;font-weight:700;}
+.brandbar p {margin:2px 0 0;opacity:.85;font-size:12.5px;}
+.verdict {border-radius:12px;padding:20px 24px;text-align:center;}
+.verdict .lab {font-size:30px;font-weight:800;line-height:1;}
+.verdict .sub {font-size:12.5px;margin-top:6px;opacity:.9;}
+.v-fung {background:#eaf5ec;border:1px solid #b6ddc0;color:#1e6b34;}
+.v-bact {background:#eef2fb;border:1px solid #c2d0ef;color:#274b8f;}
+.v-uns  {background:#fbf3e6;border:1px solid #e6d4a8;color:#8a6414;}
+.chip {display:inline-block;background:#f3e9eb;border:1px solid #e3d5d8;color:#4a1220;
+  border-radius:16px;padding:6px 14px;margin:3px 4px 0 0;font-size:13px;font-weight:600;}
+.stImage img {border-radius:10px;}
+</style>
+"""
 
-def _src_version():
-    """
-    Cache key. Without this, st.cache_resource keeps handing back a Pipeline
-    built from an older inference.py, and attribute errors appear after edits.
-    """
+
+def _srcver():
     import hashlib
     h = hashlib.md5()
     for f in ["src/inference.py", "outputs/checkpoints/calibration_external.json",
-              "outputs/checkpoints/final_model.pt"]:
+              "outputs/checkpoints/final_model.pt",
+              "models/lesion_seg/lesion_unetpp.pth"]:
         fp = Path(__file__).parent / f
         h.update(str(fp.stat().st_mtime if fp.exists() else 0).encode())
     return h.hexdigest()[:12]
 
 
-@st.cache_resource(show_spinner="Loading models (first run downloads DINOv2)...")
+@st.cache_resource(show_spinner="Loading models (first run downloads DINOv2)…")
 def load_pipeline(version: str):
     import importlib, inference
     importlib.reload(inference)
@@ -49,126 +71,107 @@ def load_pipeline(version: str):
 
 
 def main():
-    st.title("Bacterial vs Fungal Keratitis")
-    st.caption("Frozen DINOv2 ViT-S/14 · 3.67 mm native tiles · mean-pooled MIL · "
-               "15-model ensemble · temperature calibrated")
+    st.markdown(CSS, unsafe_allow_html=True)
+    st.markdown(
+        '<div class="brandbar"><h1>Keratitis AI — Bacterial vs Fungal</h1>'
+        '<p>Slit-lamp decision support · frozen DINOv2 · lesion-aware · calibrated & abstaining</p></div>',
+        unsafe_allow_html=True)
 
     try:
-        pipe = load_pipeline(_src_version())
+        pipe = load_pipeline(_srcver())
     except Exception as e:
         st.error(f"Could not load models: {e}")
         st.stop()
+    from inference import lesion_overlay, evidence_map
 
-    from inference import overlay_limbus, evidence_map
-
-    # ---------------- sidebar ----------------
+    # ---- sidebar: performance + mode + guidance ----
     with st.sidebar:
-        st.header("Model")
-        st.metric("Locked test AUC", f"{pipe.test_auc:.3f}")
-        #st.caption("131 images, patient-disjoint, used once")
-
+        st.subheader("Performance")
+        a, b = st.columns(2)
+        a.metric("Test AUC", f"{pipe.test_auc:.2f}")
         cal = getattr(pipe, "cal", None)
-        if cal:
-            st.metric("Pooled external AUC", f"{cal['pooled_auc']:.3f}")
-            #st.caption(f"{cal['n_calibration']} cases, "
-                      # f"{len(cal['cohorts'])} independent cohorts")
-        st.caption(f"Calibration temperature {pipe.temperature:.3f}")
+        b.metric("External AUC", f"{cal['pooled_auc']:.2f}" if cal else "—")
+
+        st.subheader("Decision mode")
+        mode_key = st.radio("mode", list(MODES), format_func=lambda k: MODES[k],
+                            label_visibility="collapsed")
+        st.caption(MODE_HELP[mode_key])
 
         st.divider()
-        st.subheader("Reading a result")
-        st.markdown(
-            "Fungal keratitis is far more common in clinic than bacterial. At real "
-            "prevalence a **fungal** call is highly reliable, but a **bacterial** "
-            "call is not — bacterial recall was 51–63% across validation cohorts.\n\n"
-            "**Treat a bacterial call as a prompt to confirm, never as a conclusion.**"
-        )
+        st.caption("**Fungal** calls are reliable; a **bacterial** call is rarer and "
+                   "should be confirmed, not acted on alone. For images already "
+                   "confirmed as bacterial or fungal keratitis.")
 
-    # st.warning(
-    #     "**Scope:** for images already confirmed as bacterial or fungal keratitis. "
-    #     "Any other condition — normal, viral, scar, non-infectious — will still "
-    #     "receive a confident-looking call. In a real review cohort 35% of images "
-    #     "were out of scope and 27 of 35 were confidently mislabelled. Use behind an "
-    #     "infection detector, not on unfiltered images."
-    # )
-
-    # ---------------- predict ----------------
-    up = st.file_uploader("Slit-lamp image",
+    up = st.file_uploader("Upload a slit-lamp image",
                           type=["jpg", "jpeg", "png", "tif", "tiff"])
     if up is None:
-        st.info("Upload a slit-lamp photograph of an infected cornea. "
-                "Full-resolution originals work best — the model reads a 3.67 mm "
-                "window and needs the native pixels.")
+        st.info("Upload a full-resolution slit-lamp photograph of an infected cornea "
+                "to begin.")
         return
-
-    mode_key = st.radio(
-        "Decision mode", list(MODE_LABELS),
-        format_func=lambda k: MODE_LABELS[k],
-        help="Cautious refers unclear cases for culture and is the most accurate on "
-             "the cases it does commit to (90% on the blind set). Fungal-safety never "
-             "abstains and catches the most fungal cases, at the cost of more "
-             "bacterial cases sent for antifungals.")
 
     rgb = np.asarray(Image.open(up).convert("RGB"))
-    st.caption(f"{rgb.shape[1]} × {rgb.shape[0]} px")
-
-    with st.spinner("Segmenting limbus, tiling, embedding..."):
+    with st.spinner("Analysing…"):
         res = pipe.predict(rgb)
-
     if "error" in res:
-        st.error(res["error"])
-        return
+        st.error(res["error"]); return
 
     p = res["p_fungal"]
-    mode = res["modes"][mode_key]
     verdict = res["labels_by_mode"].get(mode_key, res["label"])
-    st.caption(mode["desc"])
 
-    c1, c2, c3 = st.columns([1.2, 1, 1])
-    with c1:
-        if verdict == "Fungal":
-            st.success("### Fungal")
-        elif verdict == "Bacterial":
-            st.info("### Bacterial")
-            st.caption("Least reliable output — confirm before acting.")
-        else:
-            st.warning("### Not Sure")
-            st.caption("Not confident enough to call — recommend smear / culture / "
-                       "confocal.")
-    with c2:
-        st.metric("P(fungal)", f"{p:.3f}")
+    # ---- verdict + probability ----
+    left, right = st.columns([1, 1.15])
+    with left:
+        cls = {"Fungal": "v-fung", "Bacterial": "v-bact"}.get(verdict, "v-uns")
+        sub = {"Fungal": "Start antifungal management",
+               "Bacterial": "Least reliable output — confirm before acting",
+               "Not Sure": "Recommend smear / culture / confocal"}[verdict]
+        st.markdown(f'<div class="verdict {cls}"><div class="lab">{verdict}</div>'
+                    f'<div class="sub">{sub}</div></div>', unsafe_allow_html=True)
+        st.write("")
         st.progress(float(p))
-    with c3:
-        st.metric("Tiles analysed", res["n_tiles"])
-        st.caption(f"{res['tile_mm']:.2f} mm each · {res['mm_per_px']*1000:.2f} µm/px")
+        c1, c2 = st.columns(2)
+        c1.metric("P(fungal)", f"{p:.2f}")
+        c2.metric("Tiles analysed", res["n_tiles"])
+    with right:
+        bm = res.get("biomarkers")
+        if bm:
+            st.markdown("**Clinical signs** &nbsp;<span style='color:#888;font-size:11px'>"
+                        "(shown for review — not used in the decision)</span>",
+                        unsafe_allow_html=True)
+            chips = []
+            chips.append(f"Hypopyon: {'present' if bm['hypopyon_present'] else 'absent'}")
+            if bm["hypopyon_present"]:
+                chips.append(f"Flatness {bm['hypopyon_flatness']:.1f}")
+            chips.append(f"Infiltrate foci: {int(bm['infiltrate_n_comp'])}")
+            chips.append(f"Margin solidity {bm['infiltrate_solidity']:.2f}")
+            st.markdown("".join(f'<span class="chip">{c}</span>' for c in chips),
+                        unsafe_allow_html=True)
+            st.caption("Flat crescent & compact margin lean bacterial; multifocal & "
+                       "spiky margin lean fungal.")
 
-    st.divider()
+    st.write("")
     v1, v2 = st.columns(2)
     with v1:
-        st.subheader("Limbus")
-        st.image(overlay_limbus(rgb, res["contour"]), use_container_width=True)
-        st.caption("Green = detected limbus. Tiles are sampled only inside it.")
+        st.markdown("**Detected anatomy**")
+        st.image(lesion_overlay(rgb, res), use_container_width=True)
+        st.caption("🟢 limbus · 🔴 infiltrate · 🟣 hypopyon · 🟠 cellular halo")
     with v2:
-        st.subheader("Evidence map")
+        st.markdown("**Evidence map**")
         st.image(evidence_map(rgb, res), use_container_width=True)
-        st.caption("Red pushes fungal, blue pushes bacterial. Pooling is a mean and "
-                   "the head is linear, so these are **exact** contributions, not a "
-                   "saliency approximation.")
+        st.caption("Red pushes fungal · blue pushes bacterial (exact per-tile contribution)")
 
-    with st.expander("Per-tile detail"):
+    with st.expander("Technical detail"):
+        st.caption(f"{rgb.shape[1]}×{rgb.shape[0]} px · {res['tile_mm']:.2f} mm/tile · "
+                   f"{res['mm_per_px']*1000:.1f} µm/px · bag logit {res['logit']:.3f} · "
+                   f"temperature {pipe.temperature:.2f}")
         st.dataframe(
             pd.DataFrame({
                 "tile": range(len(res["tile_logits"])),
-                "x": [t["x"] for t in res["tiles"]],
-                "y": [t["y"] for t in res["tiles"]],
                 "cornea %": [round(100 * t["limbus_frac"], 1) for t in res["tiles"]],
-                "glare %": [round(100 * t["glare_frac"], 1) for t in res["tiles"]],
                 "logit": np.round(res["tile_logits"], 3),
-                "pushes": ["fungal" if l > 0 else "bacterial"
-                           for l in res["tile_logits"]],
+                "pushes": ["fungal" if l > 0 else "bacterial" for l in res["tile_logits"]],
             }).sort_values("logit", ascending=False),
-            use_container_width=True, hide_index=True)
-        st.caption(f"Bag logit = mean of tile logits = {res['logit']:.3f} → "
-                   f"p = {p:.3f} after temperature {pipe.temperature:.3f}")
+            use_container_width=True, hide_index=True, height=240)
 
 
 if __name__ == "__main__":
