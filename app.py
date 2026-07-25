@@ -18,16 +18,17 @@ Image.MAX_IMAGE_PIXELS = None
 st.set_page_config(page_title="Keratitis AI — Bacterial vs Fungal",
                    page_icon="👁", layout="wide")
 
-# Modes are read from the model's calibration. Cautious is the recommended
-# default: it commits only when confident and refers the rest for culture.
-MODE_NAMES = {"selective": "Cautious (recommended)",
-              "fungal_safety": "Fungal-safety", "balanced": "Balanced"}
+# Modes/thresholds come from the model's calibration (fitted on all labelled
+# data: dev + test + external). Fungal-safety is the recommended default — it
+# protects the dangerous fungal→bacterial error.
+MODE_NAMES = {"fungal_safety": "Fungal-safety (recommended)",
+              "selective": "High-precision (may abstain)", "balanced": "Balanced"}
 MODE_HELP = {
-    "selective": "Commits only when confident and marks the rest ‘Not Sure’ — the safe default for unclear cases.",
-    "fungal_safety": "Maximises fungal detection (≈92% recall); more bacterial cases go to antifungals pending culture.",
-    "balanced": "Highest overall accuracy; makes the dangerous fungal→bacterial error more often.",
+    "fungal_safety": "Default — ~90% fungal recall, ~10% fungal→bacterial. Bacterial cases get antifungal cover pending culture (the safe direction).",
+    "selective": "Answers only when confident (~85% precision on both classes, ~70% of cases); refers the rest for culture.",
+    "balanced": "Answers everything at t=0.50; higher fungal→bacterial error.",
 }
-MODE_ORDER = ["selective", "fungal_safety", "balanced"]
+MODE_ORDER = ["fungal_safety", "selective", "balanced"]
 
 CSS = """
 <style>
