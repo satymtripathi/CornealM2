@@ -129,10 +129,15 @@ def main():
         st.markdown(f'<div class="verdict {cls}"><div class="lab">{verdict}</div>'
                     f'<div class="sub">{sub}</div></div>', unsafe_allow_html=True)
         st.write("")
-        st.progress(float(p))
-        c1, c2 = st.columns(2)
-        c1.metric("P(fungal)", f"{p:.2f}")
-        c2.metric("Tiles analysed", res["n_tiles"])
+        prob_df = (pd.DataFrame({"Class": ["Bacterial", "Fungal"],
+                                 "Probability": [1.0 - p, p]})
+                   .sort_values("Probability", ascending=False).reset_index(drop=True))
+        st.dataframe(prob_df, hide_index=True, use_container_width=True,
+                     column_config={
+                         "Class": st.column_config.TextColumn(width="small"),
+                         "Probability": st.column_config.ProgressColumn(
+                             "Probability", min_value=0.0, max_value=1.0, format="%.2f")})
+        st.caption(f"{res['n_tiles']} tiles analysed · {res['tile_mm']:.2f} mm each")
     with right:
         bm = res.get("biomarkers")
         if bm:
