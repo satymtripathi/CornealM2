@@ -76,7 +76,7 @@ def main():
         '<div class="brandbar"><h1>Keratitis AI — Bacterial vs Fungal</h1>'
         '<p>Slit-lamp decision support · frozen DINOv2 · lesion-aware · calibrated & abstaining</p></div>',
         unsafe_allow_html=True)
-    st.caption("⚠️ Decision aid only — this tool can make mistakes. "
+    st.caption("Note: Decision aid only - this tool can make mistakes. "
                "Please confirm the result clinically before acting.")
 
     try:
