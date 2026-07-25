@@ -101,7 +101,7 @@ def main():
         a, b = st.columns(2)
         a.metric("Test AUC", f"{pipe.test_auc:.2f}")
         b.metric("External AUC", "0.84")
-        st.caption("Retrained on 1,484 images (v2).")
+        #st.caption("Retrained on 1,484 images (v2).")
 
         st.subheader("Decision mode")
         avail = [k for k in MODE_ORDER if k in pipe.modes()]
