@@ -303,7 +303,7 @@ LESION_COLORS = {           # RGB, clinician-facing overlay
 }
 
 
-def lesion_overlay(rgb, res, max_side=900, show=("infiltrate", "hypopyon", "cellularity"),
+def lesion_overlay(rgb, res, max_side=900, show=("infiltrate", "hypopyon"),
                    fill_alpha=0.12):
     """
     Outline the detected lesion components so the tissue under them stays visible

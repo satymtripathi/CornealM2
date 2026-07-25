@@ -154,7 +154,7 @@ def main():
     with v1:
         st.markdown("**Detected anatomy**")
         st.image(lesion_overlay(rgb, res), use_container_width=True)
-        st.caption("🟢 limbus · 🔴 infiltrate · 🟣 hypopyon · 🟠 cellular halo")
+        st.caption("🟢 limbus · 🔴 infiltrate · 🟣 hypopyon")
     with v2:
         st.markdown("**Evidence map**")
         st.image(evidence_map(rgb, res), use_container_width=True)
