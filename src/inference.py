@@ -36,7 +36,10 @@ Image.MAX_IMAGE_PIXELS = None
 
 ROOT = Path(__file__).resolve().parents[1]
 LIMBUS_CKPT = ROOT / "models" / "limbus_seg" / "model_limbus_crop_unetpp_weighted.pth"
-MODEL_CKPT = ROOT / "outputs" / "checkpoints" / "final_model.pt"
+# Prefer the retrained v2 model (1484 imgs, test AUC 0.850) when present; fall
+# back to the original v1 (682 imgs, 0.815). v1 files are kept for provenance.
+_CK = ROOT / "outputs" / "checkpoints"
+MODEL_CKPT = _CK / "final_model_v2.pt" if (_CK / "final_model_v2.pt").exists() else _CK / "final_model.pt"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 IMNET_MEAN = np.array([0.485, 0.456, 0.406], np.float32)
@@ -80,11 +83,17 @@ class Pipeline:
         # internal band was fitted on a 1:1 curated dev set and did not hold up
         # on external cohorts (coverage 81.5%->76.8%, accuracy on covered
         # 88.7%->77.6%), so 164 genuinely external cases are the better basis.
+        # Calibration: prefer v2 (dev-fitted modes for the retrained model),
+        # else the external-calibrated v1.
+        import json
         self.cal = None
-        cal_p = MODEL_CKPT.parent / "calibration_external.json"
-        if cal_p.exists():
-            import json
-            self.cal = json.loads(cal_p.read_text())
+        v2 = MODEL_CKPT.parent / "calibration_binary_v2.json"
+        ext = MODEL_CKPT.parent / "calibration_external.json"
+        if MODEL_CKPT.name.endswith("v2.pt") and v2.exists():
+            self.cal = json.loads(v2.read_text())
+            self.temperature = self.cal["temperature"]
+        elif ext.exists():
+            self.cal = json.loads(ext.read_text())
             self.temperature = self.cal["temperature_external"]
 
         self.heads = []
@@ -148,6 +157,22 @@ class Pipeline:
         prevalence and did not transfer (coverage 81.5% -> 76.8%, accuracy on
         covered 88.7% -> 77.6%).
         """
+        # v2 calibration ships an explicit modes dict (balanced / fungal_safety /
+        # selective) with dev-measured thresholds - use it directly.
+        if self.cal and isinstance(self.cal.get("modes"), dict):
+            out = {}
+            for k, v in self.cal["modes"].items():
+                d = dict(v)
+                if k == "fungal_safety":
+                    d["desc"] = (f"Protects fungal: {v.get('fungal_recall',0):.0%} recall, "
+                                 f"{v.get('misroute',0):.0%} fungal→bacterial. Default.")
+                elif k == "balanced":
+                    d["desc"] = "Highest overall accuracy (t=0.50)."
+                else:
+                    d["desc"] = "Answers only when confident; marks the rest 'Not Sure'."
+                out[k] = d
+            return out
+
         m = {"fungal_safety": {"kind": "forced", "t": 0.25,
                                "desc": "Always answers. Catches 97% of fungal cases; the "
                                        "cost is more bacterial cases called fungal."}}
@@ -261,7 +286,7 @@ class Pipeline:
         modes = self.modes()
         labels = {k: self.apply_mode(p, v) for k, v in modes.items()}
         # default label = the recommended (cautious/selective) mode if present
-        label = labels.get("selective") or next(iter(labels.values()))
+        label = labels.get("fungal_safety") or labels.get("selective") or next(iter(labels.values()))
 
         # px -> mm via limbus width
         x_, y_, w_, h_ = cv2.boundingRect(contour)

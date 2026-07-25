@@ -1,0 +1,38 @@
+{
+  "temperature": 1.270449161529541,
+  "dev_auc": 0.8371486178481677,
+  "modes": {
+    "balanced": {
+      "kind": "forced",
+      "t": 0.5,
+      "coverage": 1.0,
+      "fungal_recall": 0.7053941908713693,
+      "bacterial_recall": 0.8098591549295775,
+      "misroute": 0.2946058091286307,
+      "fungal_prec": 0.7157894736842105,
+      "bacterial_prec": 0.8019525801952581
+    },
+    "fungal_safety": {
+      "kind": "forced",
+      "t": 0.24,
+      "coverage": 1.0,
+      "fungal_recall": 0.9004149377593361,
+      "bacterial_recall": 0.5154929577464789,
+      "misroute": 0.0995850622406639,
+      "fungal_prec": 0.5578406169665809,
+      "bacterial_prec": 0.8840579710144928
+    },
+    "selective": {
+      "kind": "abstain",
+      "lo": 0.503,
+      "hi": 0.629,
+      "coverage": 0.8901006711409396,
+      "fungal_recall": 0.5663900414937759,
+      "bacterial_recall": 0.8140845070422535,
+      "misroute": 0.2966804979253112,
+      "fungal_prec": 0.8029411764705883,
+      "bacterial_prec": 0.8016643550624133
+    }
+  },
+  "default_mode": "fungal_safety"
+}

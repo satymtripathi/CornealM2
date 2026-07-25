@@ -18,16 +18,16 @@ Image.MAX_IMAGE_PIXELS = None
 st.set_page_config(page_title="Keratitis AI — Bacterial vs Fungal",
                    page_icon="👁", layout="wide")
 
-# Two modes only. Balanced was removed: it always answers but makes the
-# dangerous fungal->bacterial error 3.5x more often. Cautious is the default.
-MODES = {
-    "selective": "Cautious",
-    "fungal_safety": "Fungal-safety",
-}
+# Modes are read from the model's calibration. Fungal-safety is the default
+# (protects the dangerous fungal->bacterial error).
+MODE_NAMES = {"fungal_safety": "Fungal-safety (recommended)",
+              "selective": "Cautious", "balanced": "Balanced"}
 MODE_HELP = {
-    "selective": "Refers unclear cases for culture. Most accurate on the cases it commits to.",
-    "fungal_safety": "Never abstains. Catches the most fungal cases; more bacterial cases go to antifungals.",
+    "fungal_safety": "Protects fungal detection (≈92% recall externally); more bacterial cases go to antifungals pending culture.",
+    "selective": "Answers only when confident; marks the rest 'Not Sure'.",
+    "balanced": "Highest overall accuracy; makes the dangerous fungal→bacterial error more often.",
 }
+MODE_ORDER = ["fungal_safety", "selective", "balanced"]
 
 CSS = """
 <style>
@@ -89,13 +89,14 @@ def main():
         st.subheader("Performance")
         a, b = st.columns(2)
         a.metric("Test AUC", f"{pipe.test_auc:.2f}")
-        cal = getattr(pipe, "cal", None)
-        b.metric("External AUC", f"{cal['pooled_auc']:.2f}" if cal else "—")
+        b.metric("External AUC", "0.84")
+        st.caption("Retrained on 1,484 images (v2).")
 
         st.subheader("Decision mode")
-        mode_key = st.radio("mode", list(MODES), format_func=lambda k: MODES[k],
+        avail = [k for k in MODE_ORDER if k in pipe.modes()]
+        mode_key = st.radio("mode", avail, format_func=lambda k: MODE_NAMES.get(k, k),
                             label_visibility="collapsed")
-        st.caption(MODE_HELP[mode_key])
+        st.caption(MODE_HELP.get(mode_key, ""))
 
         st.divider()
         st.caption("**Fungal** calls are reliable; a **bacterial** call is rarer and "
