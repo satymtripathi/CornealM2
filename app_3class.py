@@ -22,14 +22,18 @@ st.set_page_config(page_title="Keratitis AI — 3-class", page_icon="👁", layo
 MODES = {"balanced": "Balanced", "cautious": "Cautious (high precision)"}
 CSS = """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+html, body, [class*="css"], .stMarkdown, .stRadio, div, p, span, label, h1, h2, h3, h4
+  { font-family: 'Inter', -apple-system, "Segoe UI", Roboto, sans-serif; }
 #MainMenu, footer, header {visibility:hidden;}
-.block-container{padding-top:2rem;max-width:1150px;}
-h1,h2,h3{color:#6a1b2d;}
-.brandbar{background:linear-gradient(100deg,#4a1220,#6a1b2d 60%,#9c3450);color:#fff;
-  padding:16px 22px;border-radius:10px;margin-bottom:6px;}
-.brandbar h1{color:#fff;margin:0;font-size:23px;} .brandbar p{margin:2px 0 0;opacity:.85;font-size:12.5px;}
-.verdict{border-radius:12px;padding:18px 22px;text-align:center;}
-.verdict .lab{font-size:28px;font-weight:800;} .verdict .sub{font-size:12px;margin-top:5px;opacity:.9;}
+.block-container{padding-top:1.6rem;max-width:1160px;}
+h1,h2,h3{color:#6a1b2d;letter-spacing:-.2px;}
+.brandbar{background:linear-gradient(100deg,#4a1220,#6a1b2d 58%,#9c3450);color:#fff;
+  padding:18px 24px;border-radius:12px;margin-bottom:4px;box-shadow:0 2px 10px rgba(74,18,32,.18);}
+.brandbar h1{color:#fff;margin:0;font-size:24px;font-weight:800;letter-spacing:-.4px;}
+.brandbar p{margin:3px 0 0;opacity:.88;font-size:12.5px;}
+.verdict{border-radius:14px;padding:22px 24px;text-align:center;}
+.verdict .lab{font-size:32px;font-weight:800;letter-spacing:-.5px;} .verdict .sub{font-size:13px;margin-top:7px;opacity:.9;font-weight:500;}
 .v-fung{background:#eaf5ec;border:1px solid #b6ddc0;color:#1e6b34;}
 .v-bact{background:#eef2fb;border:1px solid #c2d0ef;color:#274b8f;}
 .v-oth {background:#f0ecf6;border:1px solid #cfc2e6;color:#4a2f7a;}
@@ -37,6 +41,9 @@ h1,h2,h3{color:#6a1b2d;}
 .chip{display:inline-block;background:#f3e9eb;border:1px solid #e3d5d8;color:#4a1220;
   border-radius:16px;padding:6px 14px;margin:3px 4px 0 0;font-size:13px;font-weight:600;}
 .stImage img{border-radius:10px;}
+div[role="radiogroup"] label {padding:3px 0;font-size:14px;}
+section[data-testid="stSidebar"] {background:#faf6f7;}
+section[data-testid="stSidebar"] h3 {font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:#8a6b72;}
 </style>"""
 
 

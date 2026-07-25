@@ -49,3 +49,7 @@ Thumbs.db
 outputs/reports/
 outputs/external_validation/
 outputs/manifests/
+
+# raw patient deliveries (PHI)
+DataM2/
+DataM2_01/
