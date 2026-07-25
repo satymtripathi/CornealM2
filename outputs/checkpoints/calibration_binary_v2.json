@@ -1,6 +1,6 @@
 {
-  "temperature": 1.2532414197921753,
-  "pooled_auc": 0.8439706237911027,
+  "temperature": 1.2507456541061401,
+  "pooled_auc": 0.843943423597679,
   "calibration_n": 1644,
   "calibration_sources": {
     "dev": 1192,
@@ -13,8 +13,10 @@
       "t": 0.5,
       "coverage": 1.0,
       "fungal_recall": 0.7272727272727273,
+      "fungal_recall_cov": 0.7272727272727273,
       "fungal_prec": 0.7420289855072464,
       "bacterial_recall": 0.8106382978723404,
+      "bacterial_recall_cov": 0.8106382978723404,
       "bacterial_prec": 0.7987421383647799,
       "misroute": 0.2727272727272727
     },
@@ -23,21 +25,25 @@
       "t": 0.24,
       "coverage": 1.0,
       "fungal_recall": 0.9034090909090909,
-      "fungal_prec": 0.5899814471243042,
-      "bacterial_recall": 0.5297872340425532,
-      "bacterial_prec": 0.8798586572438163,
+      "fungal_recall_cov": 0.9034090909090909,
+      "fungal_prec": 0.5905292479108635,
+      "bacterial_recall": 0.5308510638297872,
+      "bacterial_recall_cov": 0.5308510638297872,
+      "bacterial_prec": 0.8800705467372134,
       "misroute": 0.09659090909090909
     },
     "selective": {
       "kind": "abstain",
-      "lo": 0.341,
+      "lo": 0.225,
       "hi": 0.688,
-      "coverage": 0.7147201946472019,
+      "coverage": 0.5875912408759124,
       "fungal_recall": 0.5198863636363636,
+      "fungal_recall_cov": 0.8511627906976744,
       "fungal_prec": 0.8511627906976744,
-      "bacterial_recall": 0.674468085106383,
-      "bacterial_prec": 0.851006711409396,
-      "misroute": 0.15767045454545456
+      "bacterial_recall": 0.502127659574468,
+      "bacterial_recall_cov": 0.8805970149253731,
+      "bacterial_prec": 0.8805970149253731,
+      "misroute": 0.09090909090909091
     }
   },
   "default_mode": "fungal_safety"

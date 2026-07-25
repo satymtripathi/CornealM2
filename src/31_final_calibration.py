@@ -14,8 +14,9 @@ Modes:
   balanced       t = 0.50
   fungal_safety  lowest t with fungal recall >= 0.90  (default - protects the
                  dangerous fungal->bacterial error)
-  selective      widest band with BOTH-arm precision >= 0.85 (a real
-                 high-precision abstain, replacing the old dominated band)
+  selective      widest band where BOTH arms clear 0.85 on precision AND
+                 covered recall (of the cases it commits to, ~85%+ correct
+                 both ways) - a symmetric high-precision/high-recall abstain
 
 Overwrites outputs/checkpoints/calibration_binary_v2.json.
 """
@@ -92,11 +93,13 @@ def main():
     print(f"temperature {T_old:.3f} -> {T:.3f} | pooled AUC {auc:.4f}")
 
     def mtr(dec):
-        fung = y == 1
-        return dict(coverage=float((dec>=0).mean()),
+        fung = y == 1; cov = dec >= 0
+        return dict(coverage=float(cov.mean()),
                     fungal_recall=float(((dec==1)&fung).sum()/fung.sum()),
+                    fungal_recall_cov=float(((dec==1)&fung).sum()/max((fung&cov).sum(),1)),
                     fungal_prec=float(((dec==1)&fung).sum()/max((dec==1).sum(),1)),
                     bacterial_recall=float(((dec==0)&(~fung)).sum()/(~fung).sum()),
+                    bacterial_recall_cov=float(((dec==0)&(~fung)).sum()/max(((~fung)&cov).sum(),1)),
                     bacterial_prec=float(((dec==0)&(~fung)).sum()/max((dec==0).sum(),1)),
                     misroute=float(((dec==0)&fung).sum()/fung.sum()))
 
@@ -106,7 +109,9 @@ def main():
     for tt in np.round(np.linspace(0.05, 0.6, 56), 3):
         if mtr((p >= tt).astype(int))["fungal_recall"] >= TARGET_FUN_RECALL: fs_t = float(tt)
     fs = mtr((p >= fs_t).astype(int))
-    # selective: widest band with both-arm precision >= floor, max coverage
+    # selective: widest band where BOTH arms clear the floor on precision AND
+    # covered recall (of the cases it commits to, ~85%+ correct both ways) - the
+    # symmetric high-precision/high-recall abstain, max coverage.
     grid = np.round(np.unique(np.concatenate([p, [0, 1]])), 3)
     best = None
     for hi in grid:
@@ -114,7 +119,9 @@ def main():
             dec = np.where(p >= hi, 1, np.where(p <= lo, 0, -1))
             if (dec == 1).sum() < MIN_CALLS or (dec == 0).sum() < MIN_CALLS: continue
             mm = mtr(dec)
-            if mm["fungal_prec"] >= PREC_FLOOR and mm["bacterial_prec"] >= PREC_FLOOR:
+            if (mm["fungal_prec"] >= PREC_FLOOR and mm["bacterial_prec"] >= PREC_FLOOR
+                    and mm["fungal_recall_cov"] >= PREC_FLOOR
+                    and mm["bacterial_recall_cov"] >= PREC_FLOOR):
                 if best is None or mm["coverage"] > best[2]["coverage"]:
                     best = (float(lo), float(hi), mm)
 

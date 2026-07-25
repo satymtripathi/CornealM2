@@ -25,7 +25,7 @@ MODE_NAMES = {"fungal_safety": "Fungal-safety (recommended)",
               "selective": "High-precision (may abstain)", "balanced": "Balanced"}
 MODE_HELP = {
     "fungal_safety": "Default — ~90% fungal recall, ~10% fungal→bacterial. Bacterial cases get antifungal cover pending culture (the safe direction).",
-    "selective": "Answers only when confident (~85% precision on both classes, ~70% of cases); refers the rest for culture.",
+    "selective": "Answers only when confident. Of the cases it commits to, ~85%+ correct both ways (recall and precision, bacterial and fungal). Answers ~60%; refers the rest for culture.",
     "balanced": "Answers everything at t=0.50; higher fungal→bacterial error.",
 }
 MODE_ORDER = ["fungal_safety", "selective", "balanced"]
