@@ -34,7 +34,8 @@ CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 html, body, [class*="css"], .stMarkdown, .stRadio, .stButton, div, p, span, label,
 h1, h2, h3, h4 { font-family: 'Inter', -apple-system, "Segoe UI", Roboto, sans-serif; }
-#MainMenu, footer, header {visibility: hidden;}
+#MainMenu, footer {visibility: hidden;}
+[data-testid="stSidebarCollapsedControl"] {visibility: visible !important;}
 .block-container {padding-top: 1.6rem; max-width: 1160px;}
 h1, h2, h3 {color: #6a1b2d; letter-spacing:-.2px;}
 .brandbar {background:linear-gradient(100deg,#4a1220,#6a1b2d 58%,#9c3450);
